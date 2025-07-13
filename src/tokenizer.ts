@@ -56,6 +56,7 @@ export const monarchLanguage = {
       { include: '@whitespace' },
 
       // delimiters and operators
+      [/:/, 'type.property'],
       [/[{}()[\]\.,]/, '@symbols'],
       [/\$/, 'operator'],
 
