@@ -30,6 +30,10 @@ export const monarchLanguage = {
 
   tokenizer: {
     root: [
+      // comments
+      [/\/\*/, 'comment', '@comment'],
+      [/\/\/.*$/, 'comment'],
+
       // Root identifier
       [/(Z)(?=\.)/, 'type.identifier'],
 
@@ -71,6 +75,12 @@ export const monarchLanguage = {
 
     whitespace: [
       [/[ \t\r\n]+/, 'white'],
+    ],
+
+    comment: [
+      [/[^\/*]+/, 'comment'],
+      [/\*\//, 'comment', '@pop'],
+      [/["\/*]/, 'comment']
     ],
   },
 } as languages.IMonarchLanguage;

@@ -19,12 +19,14 @@ export class DiagnosticsProvider {
     monaco.editor.onDidCreateModel(model => {
       if (model.getLanguageId() === ZONTAX_LANGUAGE_ID) {
         this.validate(model);
+        model.onDidChangeContent(() => this.validate(model));
       }
     });
 
     monaco.editor.getModels().forEach(model => {
         if (model.getLanguageId() === ZONTAX_LANGUAGE_ID) {
             this.validate(model);
+            model.onDidChangeContent(() => this.validate(model));
         }
     });
   }
@@ -41,27 +43,31 @@ export class DiagnosticsProvider {
     const code = model.getValue();
     const markers: monaco.editor.IMarkerData[] = [];
 
-    // Rule: Must use capital Z
+    // --- Step 1: Check for lowercase 'z' error, ignoring comments ---
     const lowercaseZRegex = /z\.(object|string|number|etc)/g;
     let match;
     while ((match = lowercaseZRegex.exec(code)) !== null) {
       const position = model.getPositionAt(match.index);
-      markers.push({
-        message: "Zontax schemas must start with a capital 'Z'.",
-        severity: monaco.MarkerSeverity.Error,
-        startLineNumber: position.lineNumber,
-        startColumn: position.column,
-        endLineNumber: position.lineNumber,
-        endColumn: position.column + 1,
-      });
+      const tokens = monaco.editor.tokenize(model.getLineContent(position.lineNumber), ZONTAX_LANGUAGE_ID);
+      const token = tokens[0].find(t => t.offset + 1 >= position.column);
+      
+      if (token && !token.type.startsWith('comment')) {
+        markers.push({
+          message: "Zontax schemas must start with a capital 'Z'.",
+          severity: monaco.MarkerSeverity.Error,
+          startLineNumber: position.lineNumber,
+          startColumn: position.column,
+          endLineNumber: position.lineNumber,
+          endColumn: position.column + 1,
+        });
+      }
     }
 
-    // Rule: Zontax parser validation
+    // --- Step 2: Run the Zontax parser ---
     try {
       this.parser.parse(code);
     } catch (error: any) {
       const message = error.message || 'An unknown error occurred.';
-      
       let errorMatch;
       const unrecognizedMethodRegex = /Unrecognized method '(.+?)'/;
       
