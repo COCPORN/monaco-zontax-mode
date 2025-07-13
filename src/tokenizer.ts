@@ -41,6 +41,9 @@ export const monarchLanguage = {
       [/([a-zA-Z_]\w*)(?=\$)/, 'namespace'],
       [/(?<=\$)([a-zA-Z_]\w*)/, 'extension'],
 
+      // Object properties (identifiers followed by a colon)
+      [/[a-zA-Z_][\w]*(?=\s*:)/, 'type.property'],
+
       // Identifiers and keywords
       [/[a-zA-Z_][\w]*/, {
         cases: {
