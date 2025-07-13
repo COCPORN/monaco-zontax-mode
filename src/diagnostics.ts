@@ -39,19 +39,34 @@ export class DiagnosticsProvider {
 
   private validate(model: monaco.editor.ITextModel): void {
     const code = model.getValue();
+    const markers: monaco.editor.IMarkerData[] = [];
+
+    // Rule: Must use capital Z
+    const lowercaseZRegex = /z\.(object|string|number|etc)/g;
+    let match;
+    while ((match = lowercaseZRegex.exec(code)) !== null) {
+      const position = model.getPositionAt(match.index);
+      markers.push({
+        message: "Zontax schemas must start with a capital 'Z'.",
+        severity: monaco.MarkerSeverity.Error,
+        startLineNumber: position.lineNumber,
+        startColumn: position.column,
+        endLineNumber: position.lineNumber,
+        endColumn: position.column + 1,
+      });
+    }
+
+    // Rule: Zontax parser validation
     try {
       this.parser.parse(code);
-      monaco.editor.setModelMarkers(model, ZONTAX_LANGUAGE_ID, []);
     } catch (error: any) {
-      const markers: monaco.editor.IMarkerData[] = [];
       const message = error.message || 'An unknown error occurred.';
       
-      let match;
-      // Example error: "Unrecognized method '.doc$description()'"
+      let errorMatch;
       const unrecognizedMethodRegex = /Unrecognized method '(.+?)'/;
       
-      if ((match = unrecognizedMethodRegex.exec(message))) {
-        const problemStr = match[1].replace(/[().]/g, ''); // clean up the string to search for
+      if ((errorMatch = unrecognizedMethodRegex.exec(message))) {
+        const problemStr = errorMatch[1].replace(/[().]/g, '');
         const searchResult = model.findMatches(problemStr, true, false, true, null, false);
         
         if (searchResult.length > 0) {
@@ -65,11 +80,8 @@ export class DiagnosticsProvider {
             endColumn: range.endColumn,
           });
         }
-      }
-
-      // If we couldn't find a specific location, fall back to marking line 1
-      if (markers.length === 0) {
-        markers.push({
+      } else {
+         markers.push({
           message,
           severity: monaco.MarkerSeverity.Error,
           startLineNumber: 1,
@@ -78,8 +90,8 @@ export class DiagnosticsProvider {
           endColumn: model.getLineMaxColumn(1),
         });
       }
-      
-      monaco.editor.setModelMarkers(model, ZONTAX_LANGUAGE_ID, markers);
     }
+    
+    monaco.editor.setModelMarkers(model, ZONTAX_LANGUAGE_ID, markers);
   }
 }

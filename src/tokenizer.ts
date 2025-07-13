@@ -33,23 +33,23 @@ export const monarchLanguage = {
       // Root identifier
       [/(Z)(?=\.)/, 'type.identifier'],
 
-      // Identifiers and keywords
-      [/[a-zA-Z_][\w$]*/, {
-        cases: {
-          '@keywords': 'keyword',
-          '(?:[a-zA-Z_][\\w]*)': 'identifier',
-        }
-      }],
-
-      // Namespace and extension
+      // Namespace and extension must be checked before general identifiers
       [/([a-zA-Z_]\w*)(?=\$)/, 'namespace'],
       [/(?<=\$)([a-zA-Z_]\w*)/, 'extension'],
+
+      // Identifiers and keywords
+      [/[a-zA-Z_][\w]*/, {
+        cases: {
+          '@keywords': 'keyword',
+          '@default': 'identifier'
+        }
+      }],
 
       // whitespace
       { include: '@whitespace' },
 
       // delimiters and operators
-      [/[{}()[\],.]/, '@symbols'],
+      [/[{}()[\]\.,]/, '@symbols'],
       [/\$/, 'operator'],
 
       // numbers
@@ -58,7 +58,7 @@ export const monarchLanguage = {
       [/\d+/, 'number'],
 
       // strings
-      [/"([^"\\]|\\.)*$/, 'string.invalid' ],  // non-teminated string
+      [/"([^"]|\\.)*$/, 'string.invalid' ],  // non-teminated string
       [/"/,  { token: 'string.quote', bracket: '@open', next: '@string' } ],
     ],
 
